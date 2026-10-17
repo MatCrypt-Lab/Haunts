@@ -6,9 +6,9 @@ import { Button, Card, Field, Row, Screen, T } from '@/components/ui';
 import { colors, radius, space } from '@/constants/theme';
 import { api, errorMessage } from '@/lib/api';
 import { useAuth, useMe } from '@/lib/auth';
-import { pullCells } from '@/lib/sync';
+import { addZone, pullCells } from '@/lib/sync';
 import { getPermissionState, requestBackground, requestForeground, startTracking } from '@/lib/tracking';
-import { addZone, getZones } from '@/lib/zones';
+import { getZones } from '@/lib/zones';
 
 type Step = 'profile' | 'location' | 'privacy';
 

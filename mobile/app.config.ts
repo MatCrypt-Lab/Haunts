@@ -35,6 +35,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       monochromeImage: './assets/images/android-icon-monochrome.png',
     },
     predictiveBackGestureEnabled: false,
+    // expo-task-manager schedules its location jobs as persisted, so they survive a reboot.
+    // Android refuses persisted jobs without this permission and the app crashes on the
+    // first background update.
+    permissions: ['android.permission.RECEIVE_BOOT_COMPLETED'],
     // Only what the app uses. expo-location adds the location and foreground-service permissions.
     blockedPermissions: [
       'android.permission.RECORD_AUDIO',

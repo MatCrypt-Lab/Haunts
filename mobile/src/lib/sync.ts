@@ -1,9 +1,21 @@
-import { addDays, cellInZones, deviceDayKey, LIMITS, type FoundDrop, type NewTitle, type VisitsResult } from '@unfog/core';
+import { addDays, cellInZones, deviceDayKey, LIMITS, type FoundDrop, type NewTitle, type PrivacyZone, type VisitsResult } from '@unfog/core';
 import { ApiError, api } from './api';
 import { emit } from './events';
-import { countPending, deletePending, deletePendingBefore, kvGet, kvSet, kvUpdateJson, mergeServerCells, peekPending } from './local-db';
+import {
+  countPending,
+  deletePending,
+  deletePendingBefore,
+  getAllCells,
+  kvGet,
+  kvSet,
+  kvUpdateJson,
+  mergeServerCells,
+  peekPending,
+  removeCells,
+} from './local-db';
 import { getToken } from './secure';
-import { getZones, queueForget, retryForget } from './zones';
+import { locationPipeline } from './serial';
+import { cellsCoveredBy, getZones, queueForget, retryForget, saveZones } from './zones';
 
 const BATCH = 1000;
 const FLUSH_EVERY_MS = 10 * 60_000;
@@ -106,4 +118,39 @@ export async function pullCells(): Promise<number> {
   }
   if (added > 0) emit('cells');
   return added;
+}
+
+/**
+ * Adds a privacy zone and erases everything already recorded inside it, on this phone and on
+ * the server. Only cell ids are sent, never the zone's centre or radius. Lives here rather
+ * than in zones.ts because it has to wait for in-flight uploads.
+ */
+export async function addZone(zone: PrivacyZone): Promise<{ removed: number }> {
+  const inside = await locationPipeline(async () => {
+    await saveZones([...(await getZones()), zone]);
+    const known = await getAllCells();
+    const covered = cellsCoveredBy(zone, known);
+    await removeCells(covered);
+    await queueForget(covered);
+    const knownSet = new Set(known);
+    return covered.filter((c) => knownSet.has(c)).length;
+  });
+  emit('cells');
+
+  // An upload that started before the zone existed may still carry cells inside it. Let it
+  // land first so the forget request removes them afterwards.
+  await flushPending().catch(() => {});
+  let removed = inside;
+  try {
+    removed = Math.max(removed, await retryForget());
+  } catch {
+    // Still queued; retried after the next successful upload.
+  }
+  return { removed };
+}
+
+export async function removeZone(id: string): Promise<void> {
+  await locationPipeline(async () => {
+    await saveZones((await getZones()).filter((z) => z.id !== id));
+  });
 }

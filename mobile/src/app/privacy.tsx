@@ -8,7 +8,8 @@ import { Button, Card, Field, Row, Screen, T } from '@/components/ui';
 import { colors, radius, space } from '@/constants/theme';
 import { errorMessage } from '@/lib/api';
 import { keys } from '@/lib/queries';
-import { addZone, getZones, removeZone } from '@/lib/zones';
+import { addZone, removeZone } from '@/lib/sync';
+import { getZones } from '@/lib/zones';
 
 export default function PrivacyScreen() {
   const queryClient = useQueryClient();

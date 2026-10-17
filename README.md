@@ -36,7 +36,7 @@ Your first test on the other laptop is therefore the first native run. The QA pl
 
 ### 1. Prerequisites
 
-- Node.js 22 (20.19 or newer works).
+- Node.js 22.12 or newer. Some dependencies, including the test runner, no longer support Node 20.
 - PostgreSQL 13 or newer, or Docker.
 - For the app: Android Studio with an emulator or a phone with USB debugging. Android Studio includes the JDK it needs. For iOS you need a Mac with Xcode.
 
