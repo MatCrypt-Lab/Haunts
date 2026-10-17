@@ -1,0 +1,21 @@
+{
+  "name": "unfog",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Unfog: a game layer over your real city. Monorepo for the shared core, API server and mobile app.",
+  "workspaces": [
+    "packages/*",
+    "server",
+    "mobile"
+  ],
+  "scripts": {
+    "test": "npm run test -w @unfog/core && npm run test -w @unfog/server",
+    "typecheck": "npm run typecheck -w @unfog/core && npm run typecheck -w @unfog/server && npm run typecheck -w mobile",
+    "server:dev": "npm run dev -w @unfog/server",
+    "server:migrate": "npm run migrate -w @unfog/server",
+    "mobile:start": "npm run start -w mobile"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}

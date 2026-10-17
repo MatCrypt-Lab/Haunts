@@ -1,0 +1,23 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+coverage/
+
+# Expo / React Native (Continuous Native Generation: android/ and ios/ are generated)
+mobile/.expo/
+mobile/android/
+mobile/ios/
+mobile/dist/
+mobile/web-build/
+mobile/expo-env.d.ts
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.keystore
+!debug.keystore
