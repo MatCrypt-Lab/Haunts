@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: unfog_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/unfog_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Core and API tests
+        run: npm test
+      - name: Typecheck all packages
+        run: npm run typecheck
+      - name: Lint the app
+        run: npx expo lint
+        working-directory: mobile
+      - name: City stats are up to date
+        run: |
+          npm run generate:city-stats -w @unfog/core
+          git diff --exit-code packages/core/src/cities/stats.generated.ts
+      - name: Server production bundle
+        run: npm run build -w @unfog/server

@@ -1,0 +1,28 @@
+# Local stack: Postgres + API. `docker compose up --build`, then the API is on http://localhost:8080
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: unfog
+      POSTGRES_PASSWORD: unfog
+      POSTGRES_DB: unfog
+    ports: ["5433:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unfog"]
+      interval: 2s
+      retries: 20
+  api:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+    ports: ["8080:8080"]
+    environment:
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      PORT: 8080
+      DATABASE_URL: postgres://unfog:unfog@db:5432/unfog
+      DEV_RETURN_OTP: "true"
+      ADMIN_API_KEY: local-admin-key-change-me-please
+volumes:
+  pgdata:
