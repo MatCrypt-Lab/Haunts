@@ -1,4 +1,4 @@
-# Haunts (working name)
+# Haunts
 
 Your private memory of everywhere you have been, with a game on top if you want one.
 
