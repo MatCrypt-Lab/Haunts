@@ -9,6 +9,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
 import { ApiError } from '@/lib/api';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { on } from '@/lib/events';
+import { keys } from '@/lib/queries';
 import { holdInvite, inviteCodeFromUrl } from '@/lib/pending-invite';
 
 void SplashScreen.preventAutoHideAsync();
@@ -36,6 +38,9 @@ function RootNavigator() {
   useEffect(() => {
     if (auth.status !== 'loading') void SplashScreen.hideAsync();
   }, [auth.status]);
+
+  // Without this the map's "+N this week" and city % stay stale until the app restarts.
+  useEffect(() => on('uploaded', () => void queryClient.invalidateQueries({ queryKey: keys.stats })), []);
 
   // Keep an invite opened before the app is ready; the tabs open it once it is.
   useEffect(() => {

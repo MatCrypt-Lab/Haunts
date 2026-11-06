@@ -12,6 +12,7 @@ import { backupStatus } from '@/lib/memory';
 import { useStats, useTitles } from '@/lib/queries';
 import { flushPending } from '@/lib/sync';
 import { getPermissionState, isTrackingEnabled, isTrackingRunning, setTrackingEnabled, startTracking } from '@/lib/tracking';
+import { plural } from '@/lib/format';
 
 const titleLabel = (t: Title) =>
   t.kind === 'pioneer' ? `Pioneer of ${t.neighbourhoodName}` : t.kind === 'territory' ? `${t.crewName} owns ${t.neighbourhoodName}` : `Local legend of ${t.neighbourhoodName}`;
@@ -70,7 +71,7 @@ export default function MeScreen() {
         <T muted>@{me.username}{me.crew ? ` · ${me.crew.name}` : ''}</T>
       </View>
 
-      <Row style={{ flexWrap: 'wrap' }}>
+      <Row style={{ flexWrap: 'wrap', alignItems: 'stretch' }}>
         <Stat label="City" value={s?.city ? `${s.city.pct.toFixed(2)}%` : '0%'} hint={s?.city ? `${s.city.explored.toLocaleString()} of ${s.city.total.toLocaleString()}` : undefined} />
         <Stat label="All blocks" value={(s?.totalCells ?? 0).toLocaleString()} />
         <Stat label="This week" value={(s?.weekCellDays ?? 0).toLocaleString()} />
@@ -124,7 +125,7 @@ export default function MeScreen() {
             />
           ) : null}
           {enabled && bgGranted && !running ? <Button title="Restart tracking" variant="secondary" onPress={() => void startTracking().then(loadTracking)} /> : null}
-          <T muted variant="small">{pending} blocks waiting to upload.</T>
+          <T muted variant="small">{plural(pending, 'block')} waiting to upload.</T>
           {pending > 0 ? (
             <Button
               title="Upload now"

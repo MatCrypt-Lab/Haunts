@@ -55,6 +55,9 @@ const people = {
 
 await db.query('UPDATE users SET crew_id = NULL WHERE email LIKE $1', ['%@demo.unfog.app']);
 await db.query(`DELETE FROM crews WHERE name IN ('Koramangala Owls', 'Indiranagar Runners')`);
+// Re-running must not stack duplicate demo drops and challenges.
+await db.query(`DELETE FROM drops WHERE sponsor = 'Demo Cafe'`);
+await db.query(`DELETE FROM challenges WHERE name = 'Demo City Wars'`);
 const owls = await createCrew(db, people.priya, { name: 'Koramangala Owls', color: '#FF5A5F' });
 const runners = await createCrew(db, people.kabir, { name: 'Indiranagar Runners', color: '#4D7CFE' });
 const code = async (crewId: string) => (await db.query<{ invite_code: string }>('SELECT invite_code FROM crews WHERE id = $1', [crewId])).rows[0]!.invite_code;

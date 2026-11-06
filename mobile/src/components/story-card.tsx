@@ -2,6 +2,7 @@ import { forwardRef, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { CELL_SIZE_M, idToAxial } from '@unfog/core';
+import { plural } from '@/lib/format';
 
 export type StoryCardProps = {
   width: number;
@@ -88,7 +89,7 @@ export const StoryCard = forwardRef<View, StoryCardProps>(function StoryCard(
         {path ? <Path d={path} fill={color} fillOpacity={0.9} /> : null}
         {weekBlocks > 0 ? (
           <SvgText x={pad} y={height * 0.88} fill={color} fontSize={18 * f} fontWeight="800">
-            {`+${weekBlocks.toLocaleString()} blocks this week`}
+            {`+${plural(weekBlocks, 'block')} this week`}
           </SvgText>
         ) : null}
         <SvgText x={pad} y={height * 0.93} fill="#FFFFFF" fontSize={15 * f} fontWeight="700">

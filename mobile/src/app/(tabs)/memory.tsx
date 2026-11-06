@@ -9,6 +9,7 @@ import { useMe } from '@/lib/auth';
 import { on } from '@/lib/events';
 import { dateLabel, dayLabel, timeOfDay } from '@/lib/format';
 import {
+  backupExists,
   backupStatus,
   getDay,
   nameStays,
@@ -29,6 +30,8 @@ export default function MemoryScreen() {
   const [data, setData] = useState<DayView | null>(null);
   const [memories, setMemories] = useState<Memory[]>([]);
   const [backup, setBackup] = useState<BackupStatus | null>(null);
+  // A backup on the server that this phone has not restored yet, e.g. after a new phone or sign-out.
+  const [waiting, setWaiting] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [version, setVersion] = useState(0);
@@ -41,7 +44,12 @@ export default function MemoryScreen() {
         .catch(() => {})
         .finally(() => setVersion((v) => v + 1));
       void onThisDay().then(setMemories).catch(() => {});
-      void backupStatus().then(setBackup).catch(() => {});
+      void backupStatus()
+        .then((b) => {
+          setBackup(b);
+          if (!b.enabled) void backupExists().then((r) => setWaiting(!!r)).catch(() => {});
+        })
+        .catch(() => {});
     }, []),
   );
   useEffect(() => {
@@ -174,15 +182,17 @@ export default function MemoryScreen() {
       </Row>
 
       <Card style={{ gap: space.sm }}>
-        <T variant="heading">{backup?.enabled ? 'Backed up and encrypted' : 'Never lose your memory'}</T>
+        <T variant="heading">{backup?.enabled ? 'Backed up and encrypted' : waiting ? 'Restore your memory' : 'Never lose your memory'}</T>
         <T muted variant="small">
           {backup?.enabled
             ? backup.lastBackupAt
               ? `Last backup ${dateLabel(backup.lastBackupAt)} at ${timeOfDay(backup.lastBackupAt)}. Only your recovery code can open it.`
               : 'Backup is on. The first one runs shortly.'
-            : 'Your timeline lives on this phone. Back it up with end-to-end encryption to keep it when you change phones.'}
+            : waiting
+              ? 'An encrypted backup of your memory is waiting. Restore it with your recovery code.'
+              : 'Your timeline lives on this phone. Back it up with end-to-end encryption to keep it when you change phones.'}
         </T>
-        <Button title={backup?.enabled ? 'Backup settings' : 'Set up backup'} variant={backup?.enabled ? 'ghost' : 'primary'} onPress={() => router.push('/memory-backup')} />
+        <Button title={backup?.enabled ? 'Backup settings' : waiting ? 'Restore' : 'Set up backup'} variant={backup?.enabled ? 'ghost' : 'primary'} onPress={() => router.push('/memory-backup')} />
       </Card>
     </Screen>
   );

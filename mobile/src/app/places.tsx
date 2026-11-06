@@ -4,7 +4,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { formatDuration } from '@unfog/core';
 import { Screen, Section, T } from '@/components/ui';
 import { colors, radius, space } from '@/constants/theme';
-import { dateLabel } from '@/lib/format';
+import { dateLabel, plural } from '@/lib/format';
 import { listPlaces, suggestions, type PlaceSummary } from '@/lib/memory';
 
 type Suggestion = Awaited<ReturnType<typeof suggestions>>[number];
@@ -31,7 +31,7 @@ export default function PlacesScreen() {
               onPress={() => router.push({ pathname: '/place-new', params: { lat: String(s.lat), lng: String(s.lng), name: s.name ?? '' } })}>
               <View style={{ flex: 1 }}>
                 <T style={{ fontWeight: '700' }}>{s.name ?? 'Unnamed spot'}</T>
-                <T muted variant="small">{s.visits} visits</T>
+                <T muted variant="small">{plural(s.visits, 'visit')}</T>
               </View>
               <T variant="small" style={{ color: colors.accent, fontWeight: '700' }}>Name it</T>
             </Pressable>

@@ -73,7 +73,7 @@ function ChallengeCard({ c }: { c: ChallengeView }) {
           <View style={[styles.dot, { backgroundColor: t.color }]} />
           <View style={{ flex: 1 }}>
             <T style={{ fontWeight: '700' }}>{t.name}{t.id === c.myTeamId ? ' (your team)' : ''}</T>
-            <T muted variant="small">{t.members} members</T>
+            <T muted variant="small">{t.members} {t.members === 1 ? 'member' : 'members'}</T>
           </View>
           <T variant="heading">{t.score.toLocaleString()}</T>
         </View>

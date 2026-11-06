@@ -17,3 +17,6 @@ export function dayLabel(day: string): string {
 export function dateLabel(t: number): string {
   return dayLabel(deviceDayKey(t));
 }
+
+/** "1 block", "2 blocks". */
+export const plural = (n: number, word: string) => `${n.toLocaleString()} ${word}${n === 1 ? '' : 's'}`;

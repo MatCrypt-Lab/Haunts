@@ -5,7 +5,7 @@ import { useFocusEffect } from 'expo-router';
 import type { MemoryBackupInfo } from '@unfog/core';
 import { Button, Card, Field, Row, Screen, T } from '@/components/ui';
 import { colors, space } from '@/constants/theme';
-import { dateLabel, timeOfDay } from '@/lib/format';
+import { dateLabel, plural, timeOfDay } from '@/lib/format';
 import {
   backupErrorMessage,
   backupExists,
@@ -62,8 +62,8 @@ export default function MemoryBackupScreen() {
         </Card>
         <T muted variant="small">Save it in your password manager or write it down. Do not post it anywhere.</T>
         <Row style={{ justifyContent: 'space-between' }}>
-          <T style={{ flex: 1 }}>I have saved my recovery code</T>
-          <Switch value={saved} onValueChange={setSaved} trackColor={{ true: colors.accent }} />
+          <T style={{ flex: 1 }} onPress={() => setSaved(!saved)}>I have saved my recovery code</T>
+          <Switch value={saved} onValueChange={setSaved} trackColor={{ true: colors.accent }} accessibilityLabel="I have saved my recovery code" />
         </Row>
         <Button
           title="Turn on backup"
@@ -93,7 +93,7 @@ export default function MemoryBackupScreen() {
           <T variant="heading">Backup is on</T>
           <T muted variant="small">
             {status.lastBackupAt ? `Last backup ${dateLabel(status.lastBackupAt)} at ${timeOfDay(status.lastBackupAt)}.` : 'Not backed up yet.'}
-            {remote ? ` Stored copy: ${(remote.sizeBytes / 1024).toFixed(0)} KB.` : ''}
+            {remote ? ` Stored copy: ${Math.ceil(remote.sizeBytes / 1024)} KB.` : ''}
           </T>
           <Button title="Back up now" loading={busy === 'now'} onPress={() => void run('now', async () => void (await backupNow()))} />
           <Button
@@ -129,7 +129,7 @@ export default function MemoryBackupScreen() {
                   void run('restore', async () => {
                     const r = await restoreBackup(restoreCode);
                     setRestoreCode('');
-                    Alert.alert('Restored', `${r.places} places and ${r.stays} stops are back.`);
+                    Alert.alert('Restored', `${plural(r.places, 'place')} and ${plural(r.stays, 'stop')} are back.`);
                   })
                 }
               />

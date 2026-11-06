@@ -100,10 +100,14 @@ export async function rebuildRecentStays(now = Date.now()): Promise<void> {
     if (last && now - last.t >= STAY_RULES.minDurationMs && now - last.t < STAY_RULES.maxGapMs) {
       pts.push({ lat: last.lat, lng: last.lng, t: now });
     }
+    // Only replace stops the phone's own fixes can rebuild. Stops restored from a backup have
+    // no fixes behind them and would otherwise be wiped on the next rebuild.
+    const firstFix = pts[0]?.t;
+    if (firstFix === undefined) return;
     const stays = detectStays(pts);
     const places = await loadPlaces(db);
     await db.withTransactionAsync(async () => {
-      await db.runAsync('DELETE FROM stays WHERE start_t >= ?', [windowStart]);
+      await db.runAsync('DELETE FROM stays WHERE start_t >= ?', [firstFix]);
       for (const s of stays) {
         await db.runAsync('INSERT OR REPLACE INTO stays (start_t, end_t, lat, lng, cell, day, place_id) VALUES (?, ?, ?, ?, ?, ?, ?)', [
           s.start,
@@ -210,7 +214,9 @@ export async function nameStays(stays: readonly StayView[], max = 8): Promise<nu
     try {
       const [a] = await Location.reverseGeocodeAsync({ latitude: s.lat, longitude: s.lng });
       if (!a) continue;
-      const parts = [a.name && a.name !== a.streetNumber ? a.name : a.street, a.district ?? a.subregion ?? a.city].filter(
+      // Android returns a Plus Code like "WJM7+JXQ" as the name when there is no street address.
+      const useName = a.name && a.name !== a.streetNumber && !/^[2-9CFGHJMPQRVWX]{4,8}\+[2-9CFGHJMPQRVWX]*$/.test(a.name);
+      const parts = [useName ? a.name : a.street, a.district ?? a.subregion ?? a.city].filter(
         (x, i, arr): x is string => !!x && arr.indexOf(x) === i,
       );
       if (parts.length === 0) continue;
@@ -441,10 +447,10 @@ export async function importDump(dump: MemoryDump): Promise<void> {
       }
       for (const [day, segments] of Object.entries(dump.paths)) {
         if (!isValidDayKey(day)) continue;
+        // Already imported. Raw fixes recorded since are drawn alongside, so they are no reason to skip:
+        // that would lose the restore day's earlier route on a new phone.
         const existing = await db.getFirstAsync<{ segments: string }>('SELECT segments FROM day_paths WHERE day = ?', [day]);
-        const hasRaw = await db.getFirstAsync<{ n: number }>('SELECT count(*) AS n FROM fixes WHERE day = ?', [day]);
-        // Raw fixes on this phone already describe the day better than the backup does.
-        if (existing || (hasRaw?.n ?? 0) > 0) continue;
+        if (existing) continue;
         await db.runAsync('INSERT INTO day_paths (day, segments) VALUES (?, ?)', [day, JSON.stringify(segments)]);
       }
     }),

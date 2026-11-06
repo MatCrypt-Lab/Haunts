@@ -2,7 +2,7 @@
 
 Your private memory of everywhere you have been, with a game on top if you want one.
 
-- **Memory, the everyday use:** Unfog quietly records where you stopped and for how long. Search "that cafe from March", name your places, see every visit, and get "a year ago today" moments. It stays on your phone, with an optional end-to-end encrypted backup so it survives a new phone. This is what people pay for.
+- **Memory, the everyday use:** Haunts quietly records where you stopped and for how long. Search "that cafe from March", name your places, see every visit, and get "a year ago today" moments. It stays on your phone, with an optional end-to-end encrypted backup so it survives a new phone. This is what people pay for.
 - **The game, the flex:** your city map starts black and living your life colours it in. Crews of friends fight for neighbourhoods every week, brands hide drops in the streets, and every Sunday you get a card worth posting to your Story.
 
 This repository contains the complete product:
@@ -10,27 +10,23 @@ This repository contains the complete product:
 | Folder | What it is |
 |---|---|
 | `packages/core` | Shared TypeScript used by both server and app: the hex grid, Bengaluru neighbourhoods, day and week rules, privacy zones, the GPS-to-blocks pipeline, and API contracts. |
-| `server` | The API. Node 20+, Fastify, PostgreSQL 13+. |
+| `server` | The API. Node 22.12+, Fastify, PostgreSQL 13+. |
 | `mobile` | The Android and iOS app. Expo SDK 57, React Native 0.86, MapLibre. |
 | `docs` | Architecture, launch checklist, QA test plan, privacy policy draft, an emulator test walk. |
 
 ## What is verified and what is not
 
-Verified on the build machine:
+Verified:
 
-- 49 unit tests for the shared core and 34 integration tests for the API against a real PostgreSQL database all pass.
+- 49 unit tests for the shared core and 35 integration tests for the API against a real PostgreSQL database all pass.
 - TypeScript passes for all three packages, and Expo lint passes for the app.
-- `expo-doctor` passes all 21 checks.
-- The app's JavaScript bundles build for Android and iOS.
-- `expo prebuild` generates valid Android and iOS projects with the right permissions, background modes and foreground service.
-- The production server bundle boots and serves a full sign-in, visits, crew and territory flow over HTTP.
+- The Android app builds and runs on an Android 17 (API 37) emulator against the API and a Neon database. The QA plan in `docs/QA_TEST_PLAN.md`, sections 1 to 8, passes there: sign-in, onboarding, background and offline tracking, private zones, crews, invite links, city wars, drops, the Story card, the memory timeline, encrypted backup and restore on a fresh install, sign-out and account deletion.
 
-Not verified, because the build machine has no Android SDK, Xcode or running Docker:
+Not verified yet:
 
-- Compiling and running the native app on a device or emulator.
+- A real Android phone, and anything that needs one: two phones in one crew, posting the card to Instagram, the 3-day battery test, and whether tracking survives swiping the app away (it did on the emulator).
+- iOS. It needs a Mac with Xcode.
 - Building the Docker image. Its install, build and run steps were reproduced outside Docker and work.
-
-Your first test on the other laptop is therefore the first native run. The QA plan in `docs/QA_TEST_PLAN.md` walks through it.
 
 ## Run it locally
 
@@ -38,12 +34,13 @@ Your first test on the other laptop is therefore the first native run. The QA pl
 
 - Node.js 22.12 or newer. Some dependencies, including the test runner, no longer support Node 20.
 - PostgreSQL 13 or newer, or Docker.
-- For the app: Android Studio with an emulator or a phone with USB debugging. Android Studio includes the JDK it needs. For iOS you need a Mac with Xcode.
+- For the app: Android Studio with an emulator or a phone with USB debugging. For iOS you need a Mac with Xcode.
+- Java 17 for Android builds. Android Studio's bundled Java may be newer, so point `JAVA_HOME` at a JDK 17 in the terminal you build from, for example `export JAVA_HOME=$(/usr/libexec/java_home -v 17)` on a Mac.
 
 ### 2. Install
 
 ```bash
-cd unfog
+cd haunts
 npm install
 ```
 
@@ -124,7 +121,7 @@ EAS emails you a link to an APK you install on your phone. Set `EXPO_PUBLIC_API_
 
 ### 6. Simulate a walk in the Android emulator
 
-Open the emulator's Extended Controls, then Location, then Routes. Import `docs/test-routes/koramangala-walk.gpx` and press play. Keep the map tab open to watch blocks reveal live. Press the home button and blocks keep arriving through the background service.
+Open the emulator's Extended Controls, then Location, then Routes. Import `docs/test-routes/koramangala-walk.gpx` and press play. If Android asks to turn on Location Accuracy, tap Turn on, or the app receives no locations. Keep the map tab open to watch blocks reveal live. Press the home button and blocks keep arriving through the background service.
 
 ## Tests
 

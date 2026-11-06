@@ -3,6 +3,8 @@ import type { FoundDrop, NewTitle } from '@unfog/core';
 type Events = {
   /** Local cells changed (new visits recorded or server sync). */
   cells: void;
+  /** Queued visits reached the server, so server-side stats are out of date. */
+  uploaded: void;
   /** Upload finished and the server reported something worth celebrating. */
   rewards: { drops: FoundDrop[]; titles: NewTitle[] };
   /** The private memory changed (places saved, restored, deleted). */

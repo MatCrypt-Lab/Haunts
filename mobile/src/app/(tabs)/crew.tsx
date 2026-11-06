@@ -10,6 +10,7 @@ import { colors, radius, space } from '@/constants/theme';
 import { api, errorMessage } from '@/lib/api';
 import { useAuth, useMe } from '@/lib/auth';
 import { keys, useCrew, useTerritory } from '@/lib/queries';
+import { plural } from '@/lib/format';
 
 export default function CrewScreen() {
   const crew = useCrew();
@@ -168,10 +169,14 @@ function CrewView({ crew }: { crew: CrewDetails }) {
                 {m.displayName ?? m.username ?? 'Member'}
                 {m.id === me.id ? ' (you)' : ''}
               </T>
-              <T variant="small" muted>@{m.username} · {m.totalCells.toLocaleString()} blocks total</T>
+              <T variant="small" muted>@{m.username} · {plural(m.totalCells, 'block')} total</T>
             </View>
             {m.isOwner ? <Chip label="Owner" /> : null}
-            <T variant="heading" style={{ color: crew.color }}>{m.weekCellDays}</T>
+            <View style={{ alignItems: 'flex-end' }}>
+              <T variant="heading" style={{ color: crew.color }}>{m.weekCellDays}</T>
+              {/* Counts each block once per day, so it can exceed the all-time total. */}
+              <T variant="small" muted>pts</T>
+            </View>
           </Pressable>
         ))}
         {crew.isOwner ? <T variant="small" muted>Long-press a member to remove them.</T> : null}

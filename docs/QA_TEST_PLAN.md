@@ -67,7 +67,7 @@ Run this on at least one Android phone and, if available, one iPhone. Use a deve
 - [ ] Use the arrows to move between days. Next is disabled on today.
 - [ ] Nothing appears inside a private zone, and no stop is created there.
 - [ ] Memory backup: create a recovery code, copy it, confirm saved, turn on. "Backed up and encrypted" shows a time.
-- [ ] Sign out (the warning mentions the backup), sign in again, open Memory backup: "Restore your memory" appears. A wrong code says it does not unlock the backup. The right code brings back places and stops.
+- [ ] Sign out (the warning mentions the backup), sign in again: the Memory tab shows "Restore your memory". Also test a fresh install (clear app data, sign in) and confirm restored stops are still there after reopening the Memory tab. A wrong code says it does not unlock the backup. The right code brings back places and stops.
 - [ ] Check the database to confirm the server cannot read the backup: `SELECT encode(substring(blob from 1 for 16), 'escape') FROM memory_backups;` shows `UFB1` then random bytes.
 
 ## 7. Me, recap, privacy, challenges

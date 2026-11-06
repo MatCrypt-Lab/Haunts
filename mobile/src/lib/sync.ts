@@ -55,6 +55,7 @@ async function doFlush(): Promise<void> {
   // The server ignores visits older than this, so stop retrying them.
   await deletePendingBefore(addDays(deviceDayKey(), -LIMITS.visitMaxAgeDays));
   const rewards: Rewards = { drops: [], titles: [] };
+  let uploaded = false;
   for (let guard = 0; guard < 50; guard++) {
     const batch = await peekPending(BATCH);
     if (batch.length === 0) break;
@@ -71,8 +72,10 @@ async function doFlush(): Promise<void> {
       throw err;
     }
     await deletePending(batch);
+    uploaded = true;
   }
   await kvSet('last_upload', String(Date.now()));
+  if (uploaded) emit('uploaded');
   await retryForget().catch(() => {});
   if (rewards.drops.length || rewards.titles.length) {
     // Kept until the UI shows them, in case this ran in the background.

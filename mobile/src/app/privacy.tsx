@@ -10,6 +10,7 @@ import { errorMessage } from '@/lib/api';
 import { keys } from '@/lib/queries';
 import { addZone, removeZone } from '@/lib/sync';
 import { getZones } from '@/lib/zones';
+import { plural } from '@/lib/format';
 
 export default function PrivacyScreen() {
   const queryClient = useQueryClient();
@@ -35,7 +36,7 @@ export default function PrivacyScreen() {
       setLabel('');
       load();
       void queryClient.invalidateQueries({ queryKey: keys.stats });
-      Alert.alert('Zone added', removed > 0 ? `${removed} blocks inside it were erased from your map.` : 'Nothing inside it will ever be recorded.');
+      Alert.alert('Zone added', removed > 0 ? `${plural(removed, 'block')} inside it ${removed === 1 ? 'was' : 'were'} erased from your map.` : 'Nothing inside it will ever be recorded.');
     } catch (err) {
       Alert.alert('Could not add zone', errorMessage(err));
     } finally {

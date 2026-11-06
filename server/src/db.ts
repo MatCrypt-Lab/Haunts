@@ -8,12 +8,16 @@ export type Db = pg.Pool;
 export type Queryable = pg.Pool | pg.PoolClient;
 
 export function createPool(databaseUrl: string, ssl: boolean): Db {
-  return new pg.Pool({
+  const pool = new pg.Pool({
     connectionString: databaseUrl,
     ssl: ssl ? { rejectUnauthorized: false } : undefined,
     max: 10,
     idleTimeoutMillis: 30_000,
   });
+  // An idle connection dropped by the network or by Neon scaling to zero emits 'error' on the pool.
+  // Unhandled, that kills the whole API. The pool already discards the broken client.
+  pool.on('error', (err) => console.error('Idle database connection lost:', err.message));
+  return pool;
 }
 
 export async function withTx<T>(db: Db, fn: (client: pg.PoolClient) => Promise<T>): Promise<T> {
