@@ -1,3 +1,5 @@
+import { randomBytes } from 'node:crypto';
+
 export type Config = {
   nodeEnv: string;
   port: number;
@@ -17,6 +19,12 @@ export type Config = {
   /** Per-IP and per-session request limits. Only disable in tests. */
   rateLimit: boolean;
   logLevel: string;
+  /** AI companion. Null disables every AI feature; the rest of the app keeps working. */
+  anthropicApiKey: string | null;
+  aiModel: string;
+  aiEffort: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+  /** Signs the conversation state the phone holds, so it cannot be edited between turns. */
+  aiStateSecret: string;
 };
 
 function bool(v: string | undefined, fallback = false): boolean {
@@ -49,6 +57,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   }
   if (reviewCode !== null && !/^\d{6}$/.test(reviewCode)) throw new Error('REVIEW_LOGIN_CODE must be 6 digits');
 
+  const anthropicApiKey = env.ANTHROPIC_API_KEY || null;
+  const aiEffort = (env.AI_EFFORT ?? 'high') as Config['aiEffort'];
+  if (!['low', 'medium', 'high', 'xhigh', 'max'].includes(aiEffort)) throw new Error('AI_EFFORT must be low, medium, high, xhigh or max');
+  // Outside production a per-process secret is fine: open conversations just restart after a reboot.
+  const aiStateSecret = env.AI_STATE_SECRET ?? (isProd ? '' : randomBytes(32).toString('hex'));
+  if (isProd && anthropicApiKey && aiStateSecret.length < 32) throw new Error('AI_STATE_SECRET must be at least 32 characters in production');
+
   return {
     nodeEnv,
     port: Number(env.PORT ?? 8080),
@@ -65,5 +80,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     trustProxy: bool(env.TRUST_PROXY, isProd),
     rateLimit: isProd ? true : bool(env.RATE_LIMIT, true),
     logLevel: env.LOG_LEVEL ?? (isProd ? 'info' : 'debug'),
+    anthropicApiKey,
+    aiModel: env.AI_MODEL ?? 'claude-opus-5-5',
+    aiEffort,
+    aiStateSecret,
   };
 }

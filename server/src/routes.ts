@@ -19,7 +19,9 @@ import {
 } from '@unfog/core';
 import { z } from 'zod';
 import type { AppContext } from './app';
-import { badRequest, conflict, isUniqueViolation, notFound, parse } from './errors';
+import { badRequest, conflict, HttpError, isUniqueViolation, notFound, parse } from './errors';
+import { moderateDrop } from './ai/features';
+import { registerAiRoutes } from './ai/routes';
 import { deleteAccount, exportAccount } from './services/account';
 import { createSession, deleteSession, findOrCreateUser, getMe, requestLoginCode, verifyLoginCode } from './services/auth';
 import { adminCreateChallenge, joinChallenge, leaveChallenge, myChallenges, teamScores } from './services/challenges';
@@ -208,7 +210,19 @@ export async function registerRoutes(app: FastifyInstance, c: AppContext): Promi
     return listDrops(db, ctx.userId, ctx.cityId);
   });
 
-  app.post('/drops', async (req) => createCommunityDrop(db, c.requireUser(req), parse(dropCreateBody, req.body)));
+  app.post('/drops', async (req) => {
+    const userId = c.requireUser(req);
+    const body = parse(dropCreateBody, req.body);
+    if (c.ai) {
+      // Fails open: the report button and auto-hide still protect people if the AI is down.
+      const verdict = await moderateDrop(c.ai, body.title, body.note ?? null).catch((err: unknown) => {
+        req.log.warn({ err }, 'drop moderation unavailable');
+        return null;
+      });
+      if (verdict && !verdict.allowed) throw new HttpError(422, 'drop_blocked', verdict.reason || 'This drop breaks the community rules.');
+    }
+    return createCommunityDrop(db, userId, body);
+  });
 
   app.post('/drops/:id/report', async (req) => reportDrop(db, c.requireUser(req), parse(idParam, req.params).id));
 
@@ -274,4 +288,6 @@ export async function registerRoutes(app: FastifyInstance, c: AppContext): Promi
     );
     return rows[0];
   });
+
+  await registerAiRoutes(app, c);
 }

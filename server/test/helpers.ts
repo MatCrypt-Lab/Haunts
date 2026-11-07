@@ -4,6 +4,8 @@ import { buildApp } from '../src/app';
 import { loadConfig } from '../src/config';
 import { createPool, type Db } from '../src/db';
 import { migrate } from '../src/migrate';
+import type { AiModel } from '../src/ai/claude';
+import type { Fetcher } from '../src/ai/geo';
 
 export const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL ?? 'postgres://localhost:5432/unfog_test';
 export const ADMIN_KEY = 'test-admin-key-0123456789abcdef';
@@ -17,7 +19,7 @@ export const clock = {
 
 export type Harness = { app: FastifyInstance; db: Db };
 
-export async function createHarness(opts: { rateLimit?: boolean } = {}): Promise<Harness> {
+export async function createHarness(opts: { rateLimit?: boolean; ai?: AiModel | null; fetch?: Fetcher } = {}): Promise<Harness> {
   const db = createPool(TEST_DATABASE_URL, false);
   await db.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
   await migrate(db);
@@ -35,6 +37,9 @@ export async function createHarness(opts: { rateLimit?: boolean } = {}): Promise
     config,
     db,
     now: () => clock.value,
+    ai: opts.ai ?? null,
+    // Tests never reach the real map services.
+    fetch: opts.fetch ?? (async () => { throw new Error('network disabled in tests'); }),
     mailer: { sendLoginCode: async (email, code) => void sent.push({ email, code }) },
   });
   await app.ready();

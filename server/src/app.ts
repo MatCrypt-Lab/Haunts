@@ -8,6 +8,8 @@ import { HttpError, forbidden, unauthorized } from './errors';
 import { userIdForToken } from './services/auth';
 import { createMailer, type Mailer } from './services/mailer';
 import { registerRoutes } from './routes';
+import { createAiModel, type AiModel } from './ai/claude';
+import type { Fetcher } from './ai/geo';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -20,6 +22,10 @@ export type AppDeps = {
   config: Config;
   db: Db;
   mailer?: Mailer;
+  /** Claude. Null turns AI off; undefined builds one from the config. Tests inject a fake. */
+  ai?: AiModel | null;
+  /** HTTP client for OpenStreetMap and weather. Tests inject a fake. */
+  fetch?: Fetcher;
   /** Injectable clock for tests. */
   now?: () => Date;
 };
@@ -28,6 +34,8 @@ export type AppContext = {
   config: Config;
   db: Db;
   mailer: Mailer;
+  ai: AiModel | null;
+  fetch: Fetcher;
   now: () => Date;
   requireUser: (req: FastifyRequest) => string;
   requireAdmin: (req: FastifyRequest) => void;
@@ -95,6 +103,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     config,
     db,
     mailer: deps.mailer ?? createMailer(config, app.log),
+    ai: deps.ai === undefined ? createAiModel(config) : deps.ai,
+    fetch: deps.fetch ?? fetch,
     now: deps.now ?? (() => new Date()),
     requireUser: (req) => {
       if (!req.userId) throw unauthorized();

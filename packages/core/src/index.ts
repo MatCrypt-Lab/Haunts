@@ -8,3 +8,4 @@ export * from './constants';
 export * from './contracts';
 export * from './api-types';
 export * from './cities/index';
+export * from './ai';
