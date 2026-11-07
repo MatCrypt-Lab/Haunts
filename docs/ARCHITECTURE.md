@@ -80,6 +80,37 @@ How it works:
 - **Backup:** the phone generates a 160-bit recovery code, shown once as 32 characters. It gzips the memory, encrypts it with AES-256-GCM using a key derived from that code, and uploads the result. The server stores bytes it cannot read. Restoring on a new phone needs the code. Backups run daily when the app opens, and once more before sign-out.
 - Signing out removes the memory from the phone. The app warns when backup is off.
 
+## AI companion
+
+An agent built on Claude, with tools split between the server and the phone so it can be personal without reading the private memory.
+
+| Piece | File |
+|---|---|
+| Agent loop, tools, signed conversation state | `server/src/ai/agent.ts` |
+| Claude client (model, effort, refusal fallback, prompt caching) | `server/src/ai/claude.ts` |
+| Places (Overpass, then Nominatim; Photon for names), walking routes (OSRM), weather (Open-Meteo) | `server/src/ai/geo.ts` |
+| Explore-walk planner | `server/src/ai/walks.ts` |
+| Block stories, daily quests, crew coach and paper, card captions, journal, Wrapped, drop moderation | `server/src/ai/features.ts` |
+| Routes | `server/src/ai/routes.ts` |
+| Phone-side tools, answered from the local memory | `mobile/src/lib/ai-memory.ts` |
+| Voice walking guide and smart nudges | `mobile/src/lib/ai-ambient.ts` |
+| Screens | `mobile/src/app/(tabs)/ask.tsx`, `mobile/src/components/ai-cards.tsx`, AI layers in `(tabs)/index.tsx` |
+| Shared types and request bodies | `packages/core/src/ai.ts` |
+| Tests (fake model, fake network) | `server/test/ai.test.ts` |
+
+How a question is answered:
+
+1. The phone sends the text, an optional photo, its local time and its current **map block** (about 60 m), never exact coordinates.
+2. The server runs Claude with server tools: `search_places`, `walking_route`, `get_weather`, `plan_explore_walk` and `game_status`.
+3. When Claude needs the memory it calls a phone tool: `check_visited`, `memory_query`, `taste_profile` or `saved_places`. The server stops and returns those calls. The phone asks the user once for permission, runs them on its own database and sends back a short summary. The chat shows what was shared. Home is never included.
+4. The answer is JSON: a message, place and route ids to draw on the map, an itinerary for plans, and follow-up suggestions.
+
+The server stores no conversations. The full state, including Claude's messages, travels with the phone between turns, signed with HMAC-SHA256, bound to the user and expiring after 6 hours. Cached AI output (`ai_cache`) holds only game data and public place data, and rows tied to a user or crew are deleted with them.
+
+Other AI features: a spoken story when the user walks into a never-explored block (cached per block for everyone); three daily quests with live progress; a crew coach and a weekly crew paper from real scores; a caption on the Story card; drop moderation before strangers see a drop (fails open, so reports still protect people if the AI is down); and an admin endpoint that drafts brand quest ideas. The journal and monthly Wrapped send the day's or month's stop names and totals only when the user taps the button, and the result is kept only on the phone.
+
+Smart nudges are local notifications decided on the phone: a saved place is nearby, rain is coming (the phone asks the server's weather proxy with its map block at most every 30 minutes), or a long stop somewhere new late at night.
+
 ## Cells, cities and neighbourhoods
 
 - **Cells** are pointy-top hexagons on a Web Mercator grid with a 60 m circumradius in Mercator metres, about 58 m on the ground in Bengaluru. IDs are the axial coordinates as `"q_r"`. The phone and server compute them with the same pure function, so no lookup is needed. See `packages/core/src/hex.ts`.
@@ -99,6 +130,7 @@ How it works:
 | Delete means delete | Account deletion removes the user and cascades to every row they own, and removes their community drops. |
 | Data access | `GET /me/export` returns everything stored about the user. |
 | Private memory stays private | Times, routes, stops and place names never leave the phone except inside the encrypted backup. The server cannot decrypt it, and the key never leaves the user's devices. |
+| AI never reads the memory directly | The memory reaches the AI only as short answers from the phone, after the user allows it. Conversations are not stored on the server. Exact coordinates are never sent, only the current map block. |
 | Tokens and codes | Session tokens and sign-in codes are stored only as SHA-256 hashes. Sign-in codes expire in 10 minutes and allow 5 attempts. |
 
 ## Game rules
@@ -146,12 +178,22 @@ All endpoints except `/health` and `/auth/*` need `Authorization: Bearer <token>
 | `GET /crews/mine/map` | The crew's combined blocks with member counts, excluding today. |
 | `GET /territory` | This week's owner of every neighbourhood, and the crew leaderboard. |
 | `GET /drops` | Drops you have found, and hints for hidden ones in your city. |
-| `POST /drops` | Leave a community drop. Body `{cell, title, note?}`. |
+| `POST /drops` | Leave a community drop. Body `{cell, title, note?}`. Checked by the AI moderator when AI is on. |
 | `POST /drops/:id/report` | Report a drop. |
 | `DELETE /drops/:id` | Delete your own drop. |
 | `POST /challenges/join` | Join a city-wars team. Body `{code}`. |
 | `GET /challenges/mine` | Your challenges with team standings. |
 | `POST /challenges/:id/leave` | Leave a challenge. |
+| `GET /ai/status` | Whether the AI features are on, and the model. |
+| `POST /ai/chat` | Ask the companion. Body `{message, localTime, cell?, image?, state?}`. Returns a reply, or phone tools to run. |
+| `POST /ai/chat/tool-results` | Continue after the phone ran its tools. Body `{state, results}`. |
+| `GET /ai/story?cell=` | A short spoken story about a block. |
+| `GET /ai/quests` | Today's three quests with live progress. |
+| `GET /ai/crew/coach`, `GET /ai/crew/paper` | Crew strategy and the weekly crew paper. |
+| `GET /ai/card-caption` | A caption for the Story card. |
+| `POST /ai/journal`, `POST /ai/wrapped` | Write a private journal entry or monthly Wrapped from a summary the phone sends. Not stored. |
+| `GET /weather?cell=` | Weather and rain in the next three hours, for nudges. |
+| `POST /admin/ai/quest-ideas` | Draft sponsored quest ideas from a brand brief. |
 | `POST /admin/drops` | Place a venue or quest drop at a coordinate. |
 | `POST /admin/challenges` | Create a challenge and its team codes. |
 | `GET /admin/challenges/:id` | Challenge standings with join codes. |
@@ -159,7 +201,7 @@ All endpoints except `/health` and `/auth/*` need `Authorization: Bearer <token>
 
 ### Rate limits
 
-Signed-in traffic is limited per account to 300 requests a minute, and visit uploads to 60 a minute. Anonymous traffic is limited per IP. Sign-in limits per IP are deliberately generous, because many Indian mobile users share one carrier IP. Each email also has a database limit of 5 codes an hour and 5 attempts per code.
+Signed-in traffic is limited per account to 300 requests a minute, and visit uploads to 60 a minute. Anonymous traffic is limited per IP. Sign-in limits per IP are deliberately generous, because many Indian mobile users share one carrier IP. Each email also has a database limit of 5 codes an hour and 5 attempts per code. AI chat is limited to 10 questions a minute per account, stories to 20, journals to 10 and Wrapped to 5.
 
 ## Scaling notes
 

@@ -20,6 +20,8 @@ Work through this after the QA plan passes on real phones.
 - [ ] `REVIEW_LOGIN_EMAIL` and `REVIEW_LOGIN_CODE` set for store reviewers.
 - [ ] Uptime monitor on `/health`.
 - [ ] Error tracking. Sentry is the usual choice for both Fastify and Expo; it is not wired in yet.
+- [ ] AI: `ANTHROPIC_API_KEY` from a production Anthropic account with a spend limit, `AI_STATE_SECRET` (32+ random characters). Decide the model: `claude-opus-5-5` at `high` is the most capable and the most expensive; `claude-haiku-5-5` costs a small fraction. Watch per-user cost before launch.
+- [ ] Map data at scale: the public Overpass, Nominatim and OSRM servers are for light use (Nominatim allows one request a second). Before real traffic, self-host them or move to a paid provider, and cache place results longer.
 - [ ] `DEV_RETURN_OTP` is unset. The server refuses to start in production if it is set.
 
 ## 3. App configuration
@@ -43,6 +45,9 @@ Background location gets a separate review. Expect one or two rounds.
   - Location, approximate: collected, not shared, required, purpose "App functionality". Blocks are about 100 m.
   - Location, precise: processed on device for the private memory. The optional memory backup is end-to-end encrypted, which Play's guidance has treated as not collected. Confirm against the current Data safety help page before submitting.
   - Email address: collected, not shared, purpose "Account management".
+  - Photos: collected only when the user sends one to Ask, shared with Anthropic as a service provider, optional, purpose "App functionality".
+  - Messages ("Other in-app messages"): questions to Ask, processed by Anthropic as a service provider, not stored, optional.
+  - Audio: none collected; speech is turned into text on the device.
   - User IDs: collected, purpose "App functionality".
   - Data encrypted in transit: yes. Users can request deletion: yes, in-app.
 - [ ] Account deletion URL: Play asks for a web page explaining how to delete. Point it at a page that says "Me, then Delete account", plus a support email for people who no longer have the app.
@@ -71,7 +76,7 @@ These are outside this codebase on purpose and come later in the roadmap:
 
 - The paid tier. Memory is the paid use case: unlimited history, backup and yearly printed books or posters are the natural "Haunts+" features. Gate them only after billing exists.
 - In-app purchases for cosmetics. Digital goods must go through Google Play Billing and Apple In-App Purchase. Use RevenueCat to keep it to one integration.
-- Push notifications for weekly territory results and recaps. Use expo-notifications and store push tokens server-side.
+- Push notifications from the server for weekly territory results and recaps. Smart nudges already use local notifications; server pushes need stored push tokens.
 - A web dashboard for brands and challenge organisers. The admin API covers it for now.
 - Sign in with Apple and Google, and phone-number sign-in. Email codes work for launch. Apple requires Sign in with Apple only if you add other social logins.
 - Direct "share to Instagram Stories" through Meta's API. The app uses the system share sheet, where Instagram offers Story.

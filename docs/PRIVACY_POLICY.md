@@ -12,6 +12,7 @@ Last updated: [date]
 - Nobody can see where you are right now. Your crew sees blocks from yesterday and earlier, never with times.
 - Private zones you set, such as home, are never recorded, and they never leave your phone.
 - Your private timeline of stops and places stays on your phone. If you back it up, it is encrypted with a code only you hold.
+- The AI companion (Ask) uses your current map block, not your exact location. It can use your private timeline only when you allow it, and then only as a short summary your phone prepares. We do not keep your conversations.
 - You can pause tracking, erase areas, download your data, or delete your account at any time, inside the app.
 
 ## What we collect
@@ -24,7 +25,9 @@ Last updated: [date]
 | Crew, challenge and drop activity | To run those features | Your use of the app |
 | Drops you leave (title, note, block) | To show them to people who explore that block | You |
 
-We do **not** collect your contacts, photos, microphone, or advertising identifiers, and we do not sell personal data.
+| Questions you ask the AI companion, and photos you choose to send it | To answer you | You |
+
+We do **not** collect your contacts, your photo library, recordings, or advertising identifiers, and we do not sell personal data. Photos are only sent when you take or pick one to ask about. Voice questions are turned into text by your phone's speech service (Google on most Android phones, Apple on iPhone) and only the text is sent to us.
 
 ## Location
 
@@ -38,13 +41,21 @@ Haunts keeps a private timeline on your phone: where you stopped, when, for how 
 
 If you turn on Memory backup, your phone encrypts the timeline with a recovery code that only you hold, and sends us the encrypted copy. We cannot read it and cannot recover it if you lose the code. You can delete the backup at any time in the app, and it is deleted with your account. Place names may be looked up using your phone's built-in map service (Google on most Android phones, Apple on iPhone).
 
+## The AI companion
+
+Ask, the walking guide, quests, the crew coach and paper, card captions, the journal and Wrapped use Claude, an AI model made by Anthropic. To answer you we send Anthropic your question, any photo you attach, your local time and the map block you are in (about 60 metres), plus game data such as your scores. Your private timeline is never sent in full: when a question needs it, your phone asks you first and then sends only a short summary, such as whether you have been to a few places or how many times you went somewhere this month. The journal and Wrapped send the stop names and times for that day or month, only when you tap the button.
+
+We do not store your conversations. Short AI texts that are not private, such as stories about a street, quests and crew news, are kept for up to a few days so they load quickly, and are deleted with your account. To find places, routes and weather we query OpenStreetMap services (Overpass, Nominatim, Photon, OSRM) and Open-Meteo with a map block or a place you asked about, never with your identity.
+
+You can turn the AI's access to your memory on or off in Me, AI, at any time.
+
 ## Who can see what
 
 - **Everyone:** your username, crew name and colour, and titles shown on leaderboards.
 - **Your crew:** your weekly block count, your total, and the combined crew map. The crew map excludes today and shows no dates or times.
 - **Challenge teammates:** your username and score in that challenge.
 - **People who explore a block where you left a drop:** the drop's title and note. Your name is not shown on community drops.
-- **Service providers:** our hosting provider [name, region], database provider [name, region], and email provider Resend, only to run the service.
+- **Service providers:** our hosting provider [name, region], database provider [name, region], email provider Resend, and Anthropic for the AI features, only to run the service.
 
 ## How long we keep data
 

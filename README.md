@@ -3,6 +3,7 @@
 Your private memory of everywhere you have been, with a game on top if you want one.
 
 - **Memory, the everyday use:** Haunts quietly records where you stopped and for how long. Search "that cafe from March", name your places, see every visit, and get "a year ago today" moments. It stays on your phone, with an optional end-to-end encrypted backup so it survives a new phone. This is what people pay for.
+- **The AI companion, Ask:** find places near you that you have never been to, plan a night out with times and walking routes, plan a walk that paints the most new blocks, ask about your own history, point the camera at a sign or menu, or just talk to it. It also narrates new streets as you walk, writes your daily quests, coaches your crew, and writes your journal and monthly Wrapped. Your memory stays on your phone: the AI only gets short answers from it, after you allow it.
 - **The game, the flex:** your city map starts black and living your life colours it in. Crews of friends fight for neighbourhoods every week, brands hide drops in the streets, and every Sunday you get a card worth posting to your Story.
 
 This repository contains the complete product:
@@ -18,7 +19,7 @@ This repository contains the complete product:
 
 Verified:
 
-- 49 unit tests for the shared core and 35 integration tests for the API against a real PostgreSQL database all pass.
+- 49 unit tests for the shared core and 45 integration tests for the API against a real PostgreSQL database all pass.
 - TypeScript passes for all three packages, and Expo lint passes for the app.
 - The Android app builds and runs on an Android 17 (API 37) emulator against the API and a Neon database. The QA plan in `docs/QA_TEST_PLAN.md`, sections 1 to 8, passes there: sign-in, onboarding, background and offline tracking, private zones, crews, invite links, city wars, drops, the Story card, the memory timeline, encrypted backup and restore on a fresh install, sign-out and account deletion.
 
@@ -151,6 +152,9 @@ The API tests use `postgres://localhost:5432/unfog_test` by default. Set `TEST_D
 | `DEV_RETURN_OTP` | dev only | Returns the code in the API response. Refused when `NODE_ENV=production`. |
 | `MIGRATE_ON_START` | no | Defaults to `true`. Set `false` to run `npm run migrate:prod` separately. |
 | `TRUST_PROXY` | no | Defaults to `true` in production, for correct client IPs behind a load balancer. |
+| `ANTHROPIC_API_KEY` | for AI | Turns on the AI companion. Without it every AI feature is off and the rest works. |
+| `AI_MODEL`, `AI_EFFORT` | no | Defaults `claude-opus-5-5` and `high`. `claude-haiku-5-5` is much cheaper. |
+| `AI_STATE_SECRET` | production, with AI | At least 32 random characters; signs the conversation state the phone holds. |
 
 ### App (`mobile/.env` or `eas.json` profiles)
 

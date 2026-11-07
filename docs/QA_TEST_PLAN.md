@@ -83,7 +83,26 @@ Run this on at least one Android phone and, if available, one iPhone. Use a deve
 - [ ] Sign back in on the same phone: onboarding asks for permissions and zones again, then your blocks reload from the server.
 - [ ] Delete account: confirm. You return to sign-in. Signing in with the same email creates a fresh, empty account.
 
-## 9. Battery spike (Phase 0)
+## 9. AI companion
+
+Needs `ANTHROPIC_API_KEY` on the server. Answers take 10 to 30 seconds.
+
+- [ ] Ask tab shows today's quests with progress and starter questions.
+- [ ] "Quiet cafe nearby I haven't tried": the first time, a "Use your memory?" card appears. Allow. Real nearby cafes come back with distance and hours; "Shared from your phone" lists what was shared. "Map" pins it on the Map tab with a Clear chip; "Save to try" adds it to Memory, Want to try.
+- [ ] "Plan a 30-minute walk that paints new blocks": a route card with distance, new blocks and drops; "Show on map" draws it.
+- [ ] "Plan Saturday evening for 4 of us, ₹1,500 each": an itinerary with times, and the plan on the map.
+- [ ] "Where did I spend the most time this month?" answers from the memory.
+- [ ] Camera button: photograph a shop sign or menu. The answer describes it and, when possible, matches a real place nearby. Long-press the camera for a gallery photo.
+- [ ] Mic button: speak a question; it is sent when you stop. Speaker button: replies are read aloud.
+- [ ] Me, AI, turn "Let Ask use my memory" off, ask a memory question: it answers without the memory and nothing is shared.
+- [ ] Crew tab: Crew coach and The crew paper show real member names and numbers.
+- [ ] Card tab: the card shows an AI caption; "Remove AI caption" hides it.
+- [ ] Memory: "Write my journal" for a day with stops asks first, then writes an entry. Recap: "Make my Wrapped".
+- [ ] Me, AI, Voice walking guide on: walk into new blocks and a short story is read aloud, at most every two minutes.
+- [ ] Me, AI, Smart nudges on: allow notifications. Near a place saved to try, a notification appears. Tapping it opens Ask.
+- [ ] Leave a drop containing a phone number: it is refused with a reason. A normal tip is accepted.
+
+## 10. Battery spike (Phase 0)
 
 Run for three full days on three phones, normal daily life, tracking on.
 
