@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { DEFAULT_SOLO_COLOR, addDays, deviceDayKey, formatDuration } from '@unfog/core';
+import { JournalCard, WishlistCard } from '@/components/ai-cards';
 import { DayMap } from '@/components/day-map';
 import { Button, Card, Field, Row, Screen, Section, T } from '@/components/ui';
 import { colors, radius, space } from '@/constants/theme';
@@ -177,9 +178,13 @@ export default function MemoryScreen() {
         ))}
       </Section>
 
+      <JournalCard day={day} stays={data?.stays ?? []} segments={data?.segments ?? []} />
+
       <Row>
         <Button title="All places" variant="secondary" onPress={() => router.push('/places')} style={{ flex: 1 }} />
       </Row>
+
+      <WishlistCard />
 
       <Card style={{ gap: space.sm }}>
         <T variant="heading">{backup?.enabled ? 'Backed up and encrypted' : waiting ? 'Restore your memory' : 'Never lose your memory'}</T>

@@ -9,7 +9,9 @@ import { DEFAULT_CITY_ID, DEFAULT_SOLO_COLOR, cityCenter, getCity, type DropDeta
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { T } from '@/components/ui';
 import { colors, radius, space } from '@/constants/theme';
+import { addToWishlist, clearAiOverlay, getAiOverlay } from '@/lib/ai';
 import { api, errorMessage } from '@/lib/api';
+import { on } from '@/lib/events';
 import { useMe } from '@/lib/auth';
 import { MAP_STYLE_URL } from '@/lib/config';
 import {
@@ -48,6 +50,20 @@ export default function MapScreen() {
   const territory = useTerritory();
   const crewMap = useCrewMap(mode === 'crew' && !!me.crew);
   const color = me.crew?.color ?? DEFAULT_SOLO_COLOR;
+  // Places and routes the AI companion sent to the map.
+  const [ai, setAi] = useState(getAiOverlay);
+  useEffect(() => on('aiOverlay', () => setAi(getAiOverlay())), []);
+  useEffect(() => {
+    if (start && ai.focus) cameraRef.current?.flyTo({ center: [ai.focus.lng, ai.focus.lat], zoom: ai.routes.length ? 14 : 15.5, duration: 800 });
+  }, [ai, start]);
+  const aiPlaces = useMemo(() => pointsToGeoJSON(ai.places.map((p) => ({ lat: p.lat, lng: p.lng, id: p.id, name: p.name }))), [ai]);
+  const aiRoutes = useMemo<GeoJSON.FeatureCollection>(
+    () => ({
+      type: 'FeatureCollection',
+      features: ai.routes.map((r) => ({ type: 'Feature', properties: { id: r.id }, geometry: { type: 'LineString', coordinates: r.coordinates } })),
+    }),
+    [ai],
+  );
 
   // Start where the user is, else the centre of their city.
   useEffect(() => {
@@ -272,6 +288,30 @@ export default function MapScreen() {
             }}>
             <Layer id="drop-dot" type="circle" paint={{ 'circle-radius': 8, 'circle-color': colors.warning, 'circle-stroke-color': '#000000', 'circle-stroke-width': 2 }} />
           </GeoJSONSource>
+          <GeoJSONSource id="ai-routes" data={aiRoutes}>
+            <Layer id="ai-route-casing" type="line" layout={{ 'line-cap': 'round', 'line-join': 'round' }} paint={{ 'line-color': '#000000', 'line-width': 7, 'line-opacity': 0.6 }} />
+            <Layer id="ai-route" type="line" layout={{ 'line-cap': 'round', 'line-join': 'round' }} paint={{ 'line-color': colors.accent, 'line-width': 4 }} />
+          </GeoJSONSource>
+          <GeoJSONSource
+            id="ai-places"
+            data={aiPlaces}
+            onPress={(e) => {
+              const id = e.nativeEvent.features[0]?.properties?.id as string | undefined;
+              const p = ai.places.find((x) => x.id === id);
+              if (!p) return;
+              Alert.alert(p.name, [p.category.replace('_', ' '), p.address, p.openingHours ? `Hours: ${p.openingHours}` : null].filter(Boolean).join('\n'), [
+                { text: 'Close', style: 'cancel' },
+                { text: 'Save to try', onPress: () => void addToWishlist(p) },
+              ]);
+            }}>
+            <Layer id="ai-place-dot" type="circle" paint={{ 'circle-radius': 9, 'circle-color': colors.accent, 'circle-stroke-color': '#FFFFFF', 'circle-stroke-width': 2 }} />
+            <Layer
+              id="ai-place-label"
+              type="symbol"
+              layout={{ 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Bold'], 'text-size': 12, 'text-offset': [0, 1.4], 'text-anchor': 'top', 'text-max-width': 10 }}
+              paint={{ 'text-color': '#FFFFFF', 'text-halo-color': '#000000', 'text-halo-width': 1.4 }}
+            />
+          </GeoJSONSource>
           <UserLocation />
         </Map>
       ) : (
@@ -281,7 +321,7 @@ export default function MapScreen() {
       <View pointerEvents="box-none" style={[styles.hud, { top: insets.top + space.sm }]}>
         <View style={styles.hudCard}>
           <T variant="title">{pct >= 0.01 ? `${pct.toFixed(pct < 10 ? 2 : 1)}%` : `${cells.length}`}</T>
-          <T variant="small" muted>{pct >= 0.01 ? `of ${cityName} explored` : `blocks explored`}</T>
+          <T variant="small" muted>{pct >= 0.01 ? `of ${cityName} explored` : `${cells.length === 1 ? 'block' : 'blocks'} explored`}</T>
           {stats.data ? (
             <T variant="small" style={{ color }}>
               +{stats.data.weekCellDays} this week{stats.data.streakDays > 1 ? ` · ${stats.data.streakDays}-day streak` : ''}
@@ -318,6 +358,15 @@ export default function MapScreen() {
           </Pressable>
         </View>
       </View>
+      {ai.places.length || ai.routes.length ? (
+        <Pressable accessibilityRole="button" accessibilityLabel="Clear AI results from the map" onPress={clearAiOverlay} style={[styles.aiChip, { top: insets.top + 110 }]}>
+          <Ionicons name="sparkles" size={14} color={colors.accent} />
+          <T variant="small" style={{ fontWeight: '700' }}>
+            {ai.routes[0]?.title ?? `${ai.places.length} place${ai.places.length === 1 ? '' : 's'} from Ask`}
+          </T>
+          <Ionicons name="close" size={16} color={colors.textMuted} />
+        </Pressable>
+      ) : null}
       {mode === 'crew' && !me.crew ? (
         <View style={styles.note}>
           <T variant="small">Join or start a crew to see your combined map.</T>
@@ -338,5 +387,6 @@ const styles = StyleSheet.create({
   segmentItem: { paddingHorizontal: space.lg, paddingVertical: space.sm, borderRadius: radius.pill },
   segmentOn: { backgroundColor: colors.accent },
   fab: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(7,7,12,0.9)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
+  aiChip: { position: 'absolute', alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: space.sm, backgroundColor: 'rgba(7,7,12,0.92)', borderRadius: radius.pill, paddingHorizontal: space.md, paddingVertical: space.sm, borderWidth: 1, borderColor: colors.accent },
   note: { position: 'absolute', left: space.lg, right: space.lg, bottom: 90, backgroundColor: colors.surfaceRaised, borderRadius: radius.md, padding: space.md },
 });

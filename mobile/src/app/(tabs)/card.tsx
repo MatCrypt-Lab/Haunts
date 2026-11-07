@@ -3,9 +3,12 @@ import { Alert, View, useWindowDimensions } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 import { DEFAULT_SOLO_COLOR, cityBBox, cellToLatLng, getCity } from '@unfog/core';
+import { useQuery } from '@tanstack/react-query';
+import { useAiEnabled } from '@/components/ai-cards';
 import { StoryCard } from '@/components/story-card';
 import { Button, Screen, T } from '@/components/ui';
 import { space } from '@/constants/theme';
+import { aiApi } from '@/lib/ai';
 import { useMe } from '@/lib/auth';
 import { useStats } from '@/lib/queries';
 import { useLocalCells } from '@/lib/use-cells';
@@ -17,6 +20,9 @@ export default function CardScreen() {
   const { width } = useWindowDimensions();
   const cardRef = useRef<View>(null);
   const [busy, setBusy] = useState(false);
+  const aiOn = useAiEnabled();
+  const caption = useQuery({ queryKey: ['ai', 'caption'], queryFn: aiApi.caption, enabled: aiOn, staleTime: 60 * 60_000, retry: false });
+  const [showCaption, setShowCaption] = useState(true);
 
   const city = getCity(me.cityId);
   // Paint only the home city so a holiday does not shrink the city to a dot.
@@ -33,7 +39,7 @@ export default function CardScreen() {
   const cityName = stats.data?.city?.name ?? city?.name ?? 'my city';
   const blocks = stats.data?.city?.explored ?? cityCells.length;
   const headline = pct >= 1 ? `${pct.toFixed(1)}%` : blocks.toLocaleString();
-  const subline = pct >= 1 ? `of ${cityName} explored` : `blocks of ${cityName} explored`;
+  const subline = pct >= 1 ? `of ${cityName} explored` : `${blocks === 1 ? 'block' : 'blocks'} of ${cityName} explored`;
   const cardWidth = Math.min(width - space.lg * 2, 420);
 
   const share = async () => {
@@ -69,9 +75,13 @@ export default function CardScreen() {
           handle={me.username ? `@${me.username}` : ''}
           crewName={me.crew?.name ?? null}
           weekBlocks={stats.data?.weekCellDays ?? 0}
+          caption={showCaption ? caption.data?.caption : null}
         />
       </View>
       <Button title="Share card" onPress={share} loading={busy} disabled={cityCells.length === 0} />
+      {caption.data ? (
+        <Button title={showCaption ? 'Remove AI caption' : 'Add AI caption'} variant="ghost" onPress={() => setShowCaption((v) => !v)} />
+      ) : null}
       {cityCells.length === 0 ? <T muted>Go for a walk first. Your card fills in as you explore.</T> : null}
     </Screen>
   );

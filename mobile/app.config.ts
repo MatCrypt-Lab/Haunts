@@ -40,8 +40,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // first background update.
     permissions: ['android.permission.RECEIVE_BOOT_COMPLETED'],
     // Only what the app uses. expo-location adds the location and foreground-service permissions.
+    // The microphone is used only while the user holds Ask's voice button.
     blockedPermissions: [
-      'android.permission.RECORD_AUDIO',
       'android.permission.SYSTEM_ALERT_WINDOW',
       'android.permission.READ_EXTERNAL_STORAGE',
       'android.permission.WRITE_EXTERNAL_STORAGE',
@@ -70,6 +70,22 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         androidForegroundServiceIcon: './assets/images/notification-icon.png',
       },
     ],
+    [
+      'expo-image-picker',
+      {
+        cameraPermission: 'Take a photo of a sign, menu or building and Haunts AI tells you what it is.',
+        photosPermission: 'Pick a photo to ask Haunts AI about.',
+      },
+    ],
+    [
+      'expo-speech-recognition',
+      {
+        microphonePermission: 'Ask Haunts AI questions by voice.',
+        speechRecognitionPermission: 'Turn what you say into a question for Haunts AI.',
+        androidSpeechServicePackages: ['com.google.android.googlequicksearchbox'],
+      },
+    ],
+    ['expo-notifications', { icon: './assets/images/notification-icon.png', color: '#00C2FF' }],
     ['expo-build-properties', { android: { usesCleartextTraffic: allowCleartext } }],
   ],
   experiments: {

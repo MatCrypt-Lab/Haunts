@@ -13,7 +13,24 @@ export type StoryCardProps = {
   handle: string;
   crewName: string | null;
   weekBlocks: number;
+  /** Optional one-liner, for example written by the AI companion. */
+  caption?: string | null;
 };
+
+/** SVG text does not wrap: split into at most two lines of about `max` characters. */
+function wrap(text: string, max: number): string[] {
+  const lines: string[] = [''];
+  for (const word of text.split(/\s+/)) {
+    const cur = lines[lines.length - 1]!;
+    if ((cur + ' ' + word).trim().length <= max) lines[lines.length - 1] = (cur + ' ' + word).trim();
+    else if (lines.length < 2) lines.push(word);
+    else {
+      lines[1] = `${lines[1]!.slice(0, max - 1)}…`;
+      break;
+    }
+  }
+  return lines;
+}
 
 const SQRT3 = Math.sqrt(3);
 /** Smallest area shown, in Mercator metres, so a few cells do not fill the whole card. */
@@ -24,7 +41,7 @@ const MIN_SPAN_M = 2500;
  * no pace or distance. Rendered as one SVG path so thousands of cells stay fast.
  */
 export const StoryCard = forwardRef<View, StoryCardProps>(function StoryCard(
-  { width, cells, color, headline, subline, handle, crewName, weekBlocks },
+  { width, cells, color, headline, subline, handle, crewName, weekBlocks, caption },
   ref,
 ) {
   const height = (width * 16) / 9;
@@ -86,6 +103,13 @@ export const StoryCard = forwardRef<View, StoryCardProps>(function StoryCard(
         <SvgText x={pad} y={height * 0.17 + 30 * f} fill="#B8B8CC" fontSize={20 * f} fontWeight="600">
           {subline}
         </SvgText>
+        {caption
+          ? wrap(caption, 34).map((line, i) => (
+              <SvgText key={i} x={pad} y={height * 0.17 + (56 + i * 19) * f} fill="#FFFFFF" fontSize={16 * f} fontWeight="600" fontStyle="italic">
+                {line}
+              </SvgText>
+            ))
+          : null}
         {path ? <Path d={path} fill={color} fillOpacity={0.9} /> : null}
         {weekBlocks > 0 ? (
           <SvgText x={pad} y={height * 0.88} fill={color} fontSize={18 * f} fontWeight="800">

@@ -4,6 +4,7 @@ import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { CREW_COLORS, type CrewDetails } from '@unfog/core';
+import { CrewAi } from '@/components/ai-cards';
 import { ColorPicker } from '@/components/color-picker';
 import { Button, Card, Chip, ErrorNote, Field, Loading, Row, Screen, Section, T } from '@/components/ui';
 import { colors, radius, space } from '@/constants/theme';
@@ -26,6 +27,7 @@ export default function CrewScreen() {
     <Screen refreshing={refreshing} onRefresh={refresh}>
       {crew.isError ? <ErrorNote message={errorMessage(crew.error)} onRetry={refresh} /> : null}
       {crew.data ? <CrewView crew={crew.data} /> : crew.isSuccess ? <NoCrew /> : null}
+      {crew.data ? <CrewAi /> : null}
       <TerritoryBoard />
       <Card style={{ gap: space.sm }}>
         <T variant="heading">City wars</T>

@@ -6,6 +6,7 @@ import { Tabs } from 'expo-router/js-tabs';
 import { useQueryClient } from '@tanstack/react-query';
 import { RewardsBanner } from '@/components/rewards-banner';
 import { colors } from '@/constants/theme';
+import { useVoiceGuide } from '@/lib/ai-ambient';
 import { compactOldDays, maybeAutoBackup } from '@/lib/memory';
 import { takeInvite } from '@/lib/pending-invite';
 import { flushPending, pullCells } from '@/lib/sync';
@@ -21,6 +22,7 @@ function icon(name: IconName) {
 
 export default function TabsLayout() {
   const queryClient = useQueryClient();
+  useVoiceGuide();
 
   // Keep tracking alive, upload the queue and refresh data whenever the app comes forward.
   useEffect(() => {
@@ -52,6 +54,7 @@ export default function TabsLayout() {
           sceneStyle: { backgroundColor: colors.bg },
         }}>
         <Tabs.Screen name="index" options={{ title: 'Map', tabBarIcon: icon('map') }} />
+        <Tabs.Screen name="ask" options={{ title: 'Ask', tabBarIcon: icon('chatbubble-ellipses') }} />
         <Tabs.Screen name="memory" options={{ title: 'Memory', tabBarIcon: icon('time') }} />
         <Tabs.Screen name="crew" options={{ title: 'Crew', tabBarIcon: icon('people') }} />
         <Tabs.Screen name="card" options={{ title: 'Card', tabBarIcon: icon('sparkles') }} />

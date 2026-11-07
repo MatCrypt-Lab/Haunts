@@ -34,6 +34,11 @@ async function open(): Promise<SQLite.SQLiteDatabase> {
     );
     -- Reverse-geocoded names, keyed by map block, so each block is looked up once.
     CREATE TABLE IF NOT EXISTS geo_names (cell TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL);
+    -- Places the AI companion found that the user saved to try. Private, like the memory.
+    CREATE TABLE IF NOT EXISTS wishlist (
+      id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, category TEXT NOT NULL,
+      lat REAL NOT NULL, lng REAL NOT NULL, created_at INTEGER NOT NULL
+    );
   `);
   return db;
 }
@@ -205,7 +210,7 @@ export async function kvUpdateJson<T>(key: string, update: (current: T | null) =
 export async function clearLocalData(): Promise<void> {
   await serialWrite((db) =>
     db.execAsync(
-      'DELETE FROM cells; DELETE FROM pending; DELETE FROM kv; DELETE FROM fixes; DELETE FROM day_paths; DELETE FROM stays; DELETE FROM places; DELETE FROM geo_names;',
+      'DELETE FROM cells; DELETE FROM pending; DELETE FROM kv; DELETE FROM fixes; DELETE FROM day_paths; DELETE FROM stays; DELETE FROM places; DELETE FROM geo_names; DELETE FROM wishlist;',
     ),
   );
 }

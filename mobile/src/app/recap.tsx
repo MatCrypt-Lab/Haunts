@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { deviceDayKey, monthKey, monthRange, addDays, previousMonth } from '@unfog/core';
+import { WrappedCard } from '@/components/ai-cards';
 import { Button, Card, ErrorNote, Loading, Row, Screen, Stat, T } from '@/components/ui';
 import { colors, space } from '@/constants/theme';
 import { errorMessage } from '@/lib/api';
@@ -70,6 +71,7 @@ export default function RecapScreen() {
           {r.newCells === 0 && r.activeDays === 0 ? <T muted>Nothing this month yet. Go outside.</T> : null}
         </View>
       ) : null}
+      <WrappedCard month={month} />
     </Screen>
   );
 }

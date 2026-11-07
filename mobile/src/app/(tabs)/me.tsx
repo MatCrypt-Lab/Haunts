@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { Alert, Linking, Switch, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import type { Title } from '@unfog/core';
+import { AiSettingsSection } from '@/components/ai-cards';
 import { Button, Card, Chip, Progress, Row, Screen, Section, Stat, T } from '@/components/ui';
 import { colors, space } from '@/constants/theme';
 import { api, errorMessage } from '@/lib/api';
@@ -140,6 +141,8 @@ export default function MeScreen() {
         </Card>
         <Button title="Private zones" variant="secondary" onPress={() => router.push('/privacy')} />
       </Section>
+
+      <AiSettingsSection />
 
       <Section title="Account">
         <T muted variant="small">{me.email}</T>

@@ -2,6 +2,7 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import { Platform } from 'react-native';
 import { deviceDayKey, fixesToVisits, type LastFix } from '@unfog/core';
+import { checkNudges } from './ai-ambient';
 import { emit } from './events';
 import { addVisits, kvGet, kvGetJson, kvSet, kvSetJson } from './local-db';
 import { flushPending, shouldFlush } from './sync';
@@ -40,6 +41,7 @@ export async function handleLocations(locations: Location.LocationObject[]): Pro
   });
   if (added > 0) emit('cells');
   await maybeRebuildStays().catch(() => {});
+  await checkNudges().catch(() => {});
   if (await shouldFlush()) await flushPending().catch(() => {});
 }
 

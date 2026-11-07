@@ -9,6 +9,8 @@ type Events = {
   rewards: { drops: FoundDrop[]; titles: NewTitle[] };
   /** The private memory changed (places saved, restored, deleted). */
   memory: void;
+  /** The AI companion's places and routes to show on the map changed. */
+  aiOverlay: void;
   /** Server rejected the session. */
   unauthorized: void;
 };

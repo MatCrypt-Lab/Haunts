@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, Stack, ThemeProvider, router } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 import { useLinkingURL } from 'expo-linking';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -39,6 +40,18 @@ function RootNavigator() {
     if (auth.status !== 'loading') void SplashScreen.hideAsync();
   }, [auth.status]);
 
+  // Smart nudges open a screen when tapped.
+  useEffect(() => {
+    if (!ready) return;
+    const open = (r: Notifications.NotificationResponse | null) => {
+      const url = r?.notification.request.content.data?.url;
+      if (typeof url === 'string') router.push(url as never);
+    };
+    void Notifications.getLastNotificationResponseAsync().then(open);
+    const sub = Notifications.addNotificationResponseReceivedListener(open);
+    return () => sub.remove();
+  }, [ready]);
+
   // Without this the map's "+N this week" and city % stay stale until the app restarts.
   useEffect(() => on('uploaded', () => void queryClient.invalidateQueries({ queryKey: keys.stats })), []);
 
@@ -70,6 +83,7 @@ function RootNavigator() {
         <Stack.Screen name="place/[id]" options={{ ...header, title: 'Place' }} />
         <Stack.Screen name="place-new" options={{ ...header, title: 'Name this place', presentation: 'modal' }} />
         <Stack.Screen name="memory-backup" options={{ ...header, title: 'Memory backup' }} />
+        <Stack.Screen name="safety" options={{ ...header, title: 'Check in', presentation: 'modal' }} />
       </Stack.Protected>
     </Stack>
   );
