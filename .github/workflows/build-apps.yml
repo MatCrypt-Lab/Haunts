@@ -1,0 +1,148 @@
+name: Build apps
+
+# Builds the Android APK and an unsigned iOS IPA, and publishes them as a GitHub release
+# anyone can download. Run it from the Actions tab, or push a tag such as v0.2.0.
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Publish the builds as a GitHub release
+        type: boolean
+        default: true
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apps-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VERSION: ${{ github.ref_type == 'tag' && github.ref_name || format('build-{0}', github.run_number) }}
+  # The API the app talks to. Set the API_URL repository variable to change it.
+  EXPO_PUBLIC_API_URL: ${{ vars.API_URL || 'https://16-179-3-70.sslip.io' }}
+  APP_BUNDLE_ID: app.unfog.mobile
+
+jobs:
+  android:
+    name: Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: gradle-${{ runner.os }}-
+      - run: npm ci
+      - name: Generate the native Android project
+        working-directory: mobile
+        run: npx expo prebuild --platform android --no-install
+      - name: Build the release APK
+        working-directory: mobile/android
+        # Phones only: arm64 and 32-bit arm keep the download small.
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+      - name: Sign with the project key
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          APK=mobile/android/app/build/outputs/apk/release/app-release.apk
+          OUT="Haunts-$VERSION.apk"
+          if [ -n "$KEYSTORE" ]; then
+            echo "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/release.jks"
+            "$BT/apksigner" sign --ks "$RUNNER_TEMP/release.jks" --ks-key-alias "$KS_ALIAS" \
+              --ks-pass env:KS_PASS --key-pass env:KS_PASS --out "$OUT" "$APK"
+            rm "$RUNNER_TEMP/release.jks"
+          else
+            echo "::warning::ANDROID_KEYSTORE_BASE64 is not set. The APK keeps a temporary debug signature, so a build from another run cannot install over it."
+            cp "$APK" "$OUT"
+          fi
+          "$BT/apksigner" verify --print-certs "$OUT" | head -3
+          ls -lh "$OUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: Haunts-*.apk
+          if-no-files-found: error
+
+  ios:
+    name: iOS IPA (unsigned)
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Use the newest stable Xcode
+        run: |
+          X=$(ls -d /Applications/Xcode_*.app | grep -vi beta | sort -V | tail -1)
+          sudo xcode-select -s "$X"
+          xcodebuild -version
+      - run: npm ci
+      - name: Generate the native iOS project and install pods
+        working-directory: mobile
+        run: npx expo prebuild --platform ios
+      - name: Build without code signing
+        working-directory: mobile/ios
+        run: |
+          set -o pipefail
+          xcodebuild -quiet -workspace Haunts.xcworkspace -scheme Haunts -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+      - name: Package the IPA
+        run: |
+          set -euo pipefail
+          mkdir Payload
+          cp -R mobile/ios/build/Build/Products/Release-iphoneos/Haunts.app Payload/
+          zip -qry "Haunts-$VERSION-unsigned.ipa" Payload
+          ls -lh Haunts-*.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios
+          path: Haunts-*.ipa
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    needs: [android, ios]
+    # Android is required; a failed iOS build still publishes the APK.
+    if: ${{ always() && needs.android.result == 'success' && (github.ref_type == 'tag' || inputs.release) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRERELEASE: ${{ github.ref_type != 'tag' && '--prerelease' || '' }}
+        run: |
+          cat > notes.md <<EOF
+          Built from ${GITHUB_SHA::7}. The app talks to ${EXPO_PUBLIC_API_URL}.
+
+          **Android:** download the \`.apk\` on your phone and open it. Allow "Install unknown apps" for your browser when asked.
+
+          **iPhone:** the \`.ipa\` is unsigned. Install it with a free sideloading tool such as AltStore or Sideloadly, which signs it with your own Apple ID. Apps signed this way expire after 7 days and need reinstalling.
+          EOF
+          gh release create "$VERSION" dist/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "Haunts $VERSION" --notes-file notes.md $PRERELEASE

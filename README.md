@@ -15,6 +15,15 @@ This repository contains the complete product:
 | `mobile` | The Android and iOS app. Expo SDK 57, React Native 0.86, MapLibre. |
 | `docs` | Architecture, launch checklist, QA test plan, privacy policy draft, an emulator test walk. |
 
+## Download the app
+
+Ready-made builds are on the [Releases page](https://github.com/MatCrypt-Lab/Haunts/releases):
+
+- **Android:** download the `.apk` on your phone and open it.
+- **iPhone:** the `.ipa` is unsigned. Install it with a free sideloading tool such as AltStore or Sideloadly, which signs it with your own Apple ID (it then expires after 7 days).
+
+New builds come from the **Build apps** workflow (`.github/workflows/build-apps.yml`): run it from the Actions tab, or push a tag such as `v0.2.0`. The Android APK is signed with the key in the `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD` and `ANDROID_KEY_ALIAS` repository secrets, so new versions install over old ones. The app talks to the API in the `API_URL` repository variable.
+
 ## What is verified and what is not
 
 Verified:
