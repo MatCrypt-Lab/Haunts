@@ -1,6 +1,7 @@
 name: Build apps
 
-# Builds the Android APK and an unsigned iOS IPA, and publishes them as a GitHub release
+# Builds the Android APK, an unsigned iOS IPA and an iOS simulator build (for browser demos
+# on Appetize), and publishes them as a GitHub release
 # anyone can download. Run it from the Actions tab, or push a tag such as v0.2.0.
 on:
   workflow_dispatch:
@@ -53,8 +54,8 @@ jobs:
         run: npx expo prebuild --platform android --no-install
       - name: Build the release APK
         working-directory: mobile/android
-        # Phones only: arm64 and 32-bit arm keep the download small.
-        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+        # Phones (arm) plus x86_64 for emulators and browser demos such as Appetize.
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a,x86_64
       - name: Sign with the project key
         env:
           KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -83,7 +84,7 @@ jobs:
           if-no-files-found: error
 
   ios:
-    name: iOS IPA (unsigned)
+    name: iOS IPA and simulator build
     runs-on: macos-15
     timeout-minutes: 90
     steps:
@@ -115,10 +116,24 @@ jobs:
           cp -R mobile/ios/build/Build/Products/Release-iphoneos/Haunts.app Payload/
           zip -qry "Haunts-$VERSION-unsigned.ipa" Payload
           ls -lh Haunts-*.ipa
+      - name: Build for the iOS simulator (Appetize)
+        working-directory: mobile/ios
+        run: |
+          set -o pipefail
+          xcodebuild -quiet -workspace Haunts.xcworkspace -scheme Haunts -configuration Release \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build \
+            ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO build
+      - name: Package the simulator build
+        run: |
+          set -euo pipefail
+          (cd mobile/ios/build/Build/Products/Release-iphonesimulator && zip -qry "$GITHUB_WORKSPACE/Haunts-$VERSION-ios-simulator.zip" Haunts.app)
+          ls -lh Haunts-*-ios-simulator.zip
       - uses: actions/upload-artifact@v4
         with:
           name: ios
-          path: Haunts-*.ipa
+          path: |
+            Haunts-*.ipa
+            Haunts-*-ios-simulator.zip
           if-no-files-found: error
 
   release:
@@ -142,7 +157,11 @@ jobs:
 
           **Android:** download the \`.apk\` on your phone and open it. Allow "Install unknown apps" for your browser when asked.
 
-          **iPhone:** the \`.ipa\` is unsigned. Install it with a free sideloading tool such as AltStore or Sideloadly, which signs it with your own Apple ID. Apps signed this way expire after 7 days and need reinstalling.
+          **iPhone:** the \`.ipa\` is unsigned. Install it with a free sideloading tool such as Sideloadly or AltStore, which signs it with your own Apple ID. Apps signed this way expire after 7 days and need reinstalling.
+
+          **Try it in a browser:** the \`-ios-simulator.zip\` (and the \`.apk\`) can be uploaded to Appetize.io for a demo link.
+
+          Step-by-step guide: https://github.com/${GITHUB_REPOSITORY}/blob/main/docs/INSTALL.md
           EOF
           gh release create "$VERSION" dist/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
             --title "Haunts $VERSION" --notes-file notes.md $PRERELEASE

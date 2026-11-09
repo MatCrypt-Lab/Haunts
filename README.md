@@ -20,7 +20,10 @@ This repository contains the complete product:
 Ready-made builds are on the [Releases page](https://github.com/MatCrypt-Lab/Haunts/releases):
 
 - **Android:** download the `.apk` on your phone and open it.
-- **iPhone:** the `.ipa` is unsigned. Install it with a free sideloading tool such as AltStore or Sideloadly, which signs it with your own Apple ID (it then expires after 7 days).
+- **iPhone:** the `.ipa` is unsigned. Install it with a free sideloading tool such as Sideloadly or AltStore, which signs it with your own Apple ID (it then expires after 7 days).
+- **Browser demo:** the `-ios-simulator.zip` and the `.apk` can be uploaded to Appetize.io to get a link anyone can try without installing.
+
+Step-by-step instructions for all three: [docs/INSTALL.md](docs/INSTALL.md).
 
 New builds come from the **Build apps** workflow (`.github/workflows/build-apps.yml`): run it from the Actions tab, or push a tag such as `v0.2.0`. The Android APK is signed with the key in the `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD` and `ANDROID_KEY_ALIAS` repository secrets, so new versions install over old ones. The app talks to the API in the `API_URL` repository variable.
 
