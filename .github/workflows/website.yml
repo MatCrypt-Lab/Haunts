@@ -1,7 +1,7 @@
 name: Website
 
 # Builds the showcase site in web/ and publishes it to GitHub Pages:
-# https://matcrypt-lab.github.io/Haunts/
+# https://haunts.sudeepgowda.tech (custom domain set in the repo's Pages settings)
 on:
   push:
     branches: [main]
