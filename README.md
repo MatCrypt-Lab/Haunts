@@ -17,6 +17,8 @@ This repository contains the complete product:
 
 ## Download the app
 
+See it first on the website: **https://matcrypt-lab.github.io/Haunts/** (source in `web/`, deployed to GitHub Pages by `.github/workflows/website.yml`).
+
 Ready-made builds are on the [Releases page](https://github.com/MatCrypt-Lab/Haunts/releases):
 
 - **Android:** download the `.apk` on your phone and open it.
