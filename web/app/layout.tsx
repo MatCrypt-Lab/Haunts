@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   alternates: { canonical: `${SITE.url}/` },
   openGraph: { type: 'website', siteName: 'Haunts', title: 'Haunts · Your city starts in fog', description, url: `${SITE.url}/`, images: [OG_IMAGE] },
   twitter: { card: 'summary_large_image', title: 'Haunts · Your city starts in fog', description, images: [OG_IMAGE.url] },
-  icons: { icon: '/Haunts/icon.svg' },
+  icons: { icon: '/icon.svg' },
 };
 
 export const viewport: Viewport = { themeColor: '#e8e3f3', width: 'device-width', initialScale: 1 };

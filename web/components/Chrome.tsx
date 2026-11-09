@@ -9,7 +9,6 @@ import { cityStore } from '@/lib/store';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const BASE = '/Haunts';
 const HEX = 26; // px radius of transition and trail hexes
 const PAINT = ['#00a8e0', '#6a3fd1', '#ff5a5f', '#2fbf86', '#ff9f1c'];
 // Real neighbourhoods on the route bar; the reader "walks" past them as the page scrolls.
@@ -167,8 +166,8 @@ export default function Chrome() {
       const a = (e.target as HTMLElement).closest('a');
       if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || a.target === '_blank') return;
       const url = new URL(a.href, location.href);
-      if (url.origin !== location.origin || !url.pathname.startsWith(BASE) || url.hash) return;
-      const to = url.pathname.slice(BASE.length) || '/';
+      if (url.origin !== location.origin || url.hash) return;
+      const to = url.pathname || '/';
       if (to === pathname) return;
       e.preventDefault();
       // Capture phase: keep Next's own link handler from navigating before the fog has rolled in.
